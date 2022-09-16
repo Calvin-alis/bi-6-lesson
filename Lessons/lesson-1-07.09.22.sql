@@ -1,5 +1,14 @@
-# Lesson 1 - BI6
-
+/*
+	Lesson 1 - BI6 - 07.09.22
+	Start with Sql. Basic - Sql
+	1. Типи комментарів
+	2. Ключево слово Use, SELECT
+	3. Оператор *, та вибір колон з таблиці
+	4. Where - блок, AND/OR  
+	5. In/Not In - оператори
+	6. LIKE/BETWEEN - оператори LIKE(statement _ or %)
+	7. Is null/is not null
+*/
 
 
 SELECT "SLOVO";
