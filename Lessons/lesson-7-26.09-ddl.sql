@@ -1,5 +1,5 @@
 /*
-	Lesson 26.09.22:  DDL
+	Lesson 26.09.22 - 28.09.22:  DDL
      DDL(Data Definition Language) - Create, Alter, Drop, Rename 
     1. Create DB/ SHOW/ Exists
     2.  Types of engines
@@ -70,7 +70,7 @@ SHOW ENGINES;
 		InnoDB - ACID model
 */
 
-# DROP TABLE IF  EXISTS tasks;
+DROP TABLE IF  EXISTS tasks;
 
 # camelStyle
 # python_style
@@ -92,7 +92,7 @@ DESC tasks;
 SELECT * FROM tasks;
 
 
-# SHOW FULL PROCESSLIST; 
+SHOW FULL PROCESSLIST; 
 
 CREATE TABLE 
 IF NOT EXISTS emplo_test LIKE employees.employees;
@@ -132,7 +132,14 @@ CREATE TABLE IF NOT EXISTS checklists (
 					ON UPDATE RESTRICT ON DELETE CASCADE 
                     );
                     
+SELECT *
+FROM information_schema.INNODB_FOREIGN_COLS;
+
 DESC checklists;
+
+ALTER TABLE checklists
+DROP FOREIGN KEY checklists_ibfk_1;
+
 
 CREATE TABLE IF NOT EXISTS checklists2 (
     todo_id INT AUTO_INCREMENT,
@@ -145,13 +152,170 @@ CREATE TABLE IF NOT EXISTS checklists2 (
         REFERENCES tasks (task_id)
         ON UPDATE RESTRICT ON DELETE CASCADE );
         
+
 ALTER TABLE checklists2 
 DROP FOREIGN KEY constr_task;
 
 DESC checklists2;
 
-SELECT *
-FROM information_schema.INNODB_FOREIGN_COLS;
+/*
+	CONSTRAINT(Обмеження)- умовний фільтр для таблиці 
+	1. Primary Key - унікальний ідентифікатор, Не може бути NULL та всі id Унікальні
+	2. Not Null - не можете мати null значень 
+    3. Unique - всі значення повинні бути унікальні (якщо данні вже є в таблиці, дублів не буде)
+    4. Foreign Key 
+    5. DEFAULT 
+    6. Check
+*/
+
+# PRIMARY KEY CONSTRAINT
+# DROP TABLE IF EXISTS try_primary_key_const;
+CREATE TABLE IF NOT EXISTS try_primary_key_const (
+	id INT PRIMARY KEY,
+    info VARCHAR(10)
+);
+
+DESC try_primary_key_const;
+
+
+INSERT INTO try_primary_key_const
+VALUES
+(NULL, 'Sometext'); # Поверне  error, primary key не може бути NULL
+
+INSERT INTO try_primary_key_const
+VALUES
+(1, 'Sometext');
+
+SELECT * FROM try_primary_key_const;
+
+INSERT INTO try_primary_key_const
+VALUES
+(1, 'Sometext'); # Поверне error, primary key не може мати дублікатів 
+
+/*
+	Alter - внести зміну в структуру таблиці
+	ALTER table(назва таблиці)
+    Дія(ADD/DROP/MODIFY) COLUMN назва колонки
+*/
+
+ALTER TABLE try_primary_key_const
+CHANGE COLUMN   # Вказуемо що будуть внесені зміни в колонку
+info   # Назва колонки для якої буде вноситись зміна
+new_info # Нова назва, можна вказати стару назву колонки
+VARCHAR(35) NOT NULL ; # Зміни які внесли
+
+DESC try_primary_key_const;
+
+INSERT INTO try_primary_key_const VALUES
+(2, NULL); # Буде помилка так як new_info не може бути Null
+
+SELECT * FROM try_primary_key_const;
+
+ALTER TABLE try_primary_key_const
+ADD COLUMN test_unique INT UNIQUE;
+
+INSERT INTO try_primary_key_const VALUES
+(3, 'Some text', 1);
+
+INSERT INTO try_primary_key_const VALUES
+(4, 'Some text', 1); # Поверне помилку, для 3 колонки оскільки 3 колонка буде тільки унікальні значення 
+
+DESC try_primary_key_const;
+
+
+ALTER TABLE try_primary_key_const
+ADD CONSTRAINT unique_constaint  UNIQUE(new_info); # Добавляемо констрейнт для new_info  з назвою 
+
+
+ALTER TABLE try_primary_key_const
+DROP CONSTRAINT  unique_constaint; # Видалення констрейнт по імені
+
+ALTER TABLE try_primary_key_const
+MODIFY new_info VARCHAR(50) UNIQUE; 
+
+DESC try_primary_key_const;
+
+ALTER TABLE try_primary_key_const
+ADD COLUMN test_time_default DATE; # Добавляем колонку в кінець
+
+
+
+ALTER TABLE try_primary_key_const
+ALTER test_time_default 
+SET DEFAULT '1990-01-01'; # Задаємо дефолт значення 
+
+
+ALTER TABLE try_primary_key_const
+CHANGE COLUMN # Інший спосіб задання дефолт значення 
+test_time_default
+test_time_default
+DATETIME 
+DEFAULT CURRENT_TIMESTAMP();  
+
+
+ALTER TABLE try_primary_key_const
+ALTER test_time_default 
+DROP DEFAULT; # Видаляємо дефолте значення
+
+DESC try_primary_key_const;
+
+SELECT * FROM
+ try_primary_key_const;
+
+ALTER TABLE try_primary_key_const
+ADD COLUMN test_create_3_constrain
+VARCHAR(15)  NOT NULL;
+
+# CHECK - CONST
+ALTER TABLE try_primary_key_const
+ADD COLUMN age TINYINT;
+
+DESC try_primary_key_const;
+
+
+ALTER TABLE try_primary_key_const
+CHANGE age age  INT ;  
+
+ALTER TABLE try_primary_key_const
+ADD CONSTRAINT check_age CHECK(age >=18 AND age <= 100); 
+
+INSERT INTO 
+	try_primary_key_const(test_create_3_constrain)
+VALUES
+	('NOT NULL');
+
+SELECT * FROM 
+try_primary_key_const;
+
+DESC try_primary_key_const;
+
+
+INSERT INTO try_primary_key_const( id, test_create_3_constrain, age, test_time_default) VALUES
+(1, 'Test const', 17, curtime() );
+
+ALTER TABLE try_primary_key_const
+DROP CONSTRAINT check_age;
+
+ALTER TABLE try_primary_key_const
+AUTO_INCREMENT = 10000;
+
+
+
+ALTER TABLE try_primary_key_const
+MODIFY id  INT  AUTO_INCREMENT PRIMARY KEY;
+
+
+ALTER TABLE try_primary_key_const
+DROP PRIMARY KEY;
+
+ALTER TABLE try_primary_key_const
+ALTER COLUMN age 
+SET DEFAULT 18;
+
+DESC try_primary_key_const;
+
+ALTER TABLE try_primary_key_const
+ALTER  age DROP DEFAULT;
 
 /*
 INSERT INTO checklists(task_id, todo)
@@ -174,16 +338,21 @@ DROP TABLE IF EXISTS checklists;
  
 SHOW TABLES;
 
-RENAME TABLE checklists TO checklists_old;
+
+RENAME TABLE  checklists   TO checklists_old;
 
 SHOW TABLES;
 
-RENAME TABLE employees.departments_dup TO test_create_db.departments_dup; # Transfer in schemas
+SELECT * 
+FROM employees.emplo_dup1;
+
+RENAME TABLE employees.emplo_dup1 TO test_create_db.emplo_dup1; # Transfer in schemas
 
 SHOW TABLES;
 
-
-CREATE TABLE posts (
+#DROP TABLE IF EXISTS posts;
+ 
+CREATE TABLE IF NOT EXISTS posts (
 			id 				INT 										AUTO_INCREMENT 				PRIMARY KEY,
 			title 				VARCHAR(255) 					NOT NULL,
 			excerpt 		VARCHAR(400),
@@ -194,9 +363,17 @@ CREATE TABLE posts (
 
 SELECT * FROM posts;
 
+DESC posts;
 
-ALTER TABLE posts
-DROP COLUMN excerpt;
+/*
+	ALTER TABLE імя_таблиці
+    DROP COLUMNS імя_колонки/констрайнт 
+*/
+
+
+ALTER TABLE posts # ALTER - вказуемо що будуть зміни в таблиці
+DROP COLUMN excerpt; # вказуемо що видаляемо(DROP) колонку(COLUMN)
+
 
 SELECT * FROM posts;
 
@@ -207,84 +384,133 @@ SHOW TABLES;
 SELECT * FROM tasks;
 
 
-ALTER TABLE tasks
+DROP TABLE IF  EXISTS tasks_change_struct;
+
+CREATE TABLE IF NOT EXISTS tasks_change_struct (
+	task_id INT AUTO_INCREMENT PRIMARY KEY,
+	title VARCHAR(255) NOT NULL,
+	start_date DATE,
+	due_date DATE,
+	status TINYINT NOT NULL,
+	priority  TINYINT  UNSIGNED NOT NULL, # UNSIGNED - прибрати негативні значення тільки більше 0
+	description TEXT,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE = INNODB;
+
+DESC tasks_change_struct;
+
+
+ALTER TABLE tasks_change_struct
 ADD COLUMN  hardware VARCHAR(255) AFTER status; 
 
-select * from tasks;
+SELECT * FROM 
+tasks_change_struct;
 
-ALTER TABLE tasks
+ALTER TABLE tasks_change_struct
 ADD COLUMN  hardware_group INT NOT NULL; 
 
-ALTER TABLE tasks
-ADD COLUMN  id_last INT NOT NULL ; 
+
+ALTER TABLE tasks_change_struct
+ADD COLUMN  id_last INT NOT NULL ;  # Добавити в кінці 
+
+DESC tasks_change_struct;
+
+ALTER TABLE tasks_change_struct
+ADD COLUMN id INT NOT NULL FIRST; # Добавити першим
 
 
-ALTER TABLE tasks
-ADD COLUMN id INT NOT NULL FIRST;
-
-
-SELECT * FROM tasks;
+SELECT * FROM tasks_change_struct;
 
 # TRUNCATE tasks;
 TRUNCATE checklists2;
 
 
-SELECT * FROM  tasks;
+SELECT * FROM  tasks_change_struct;
 
-SELECT  COUNT(emp_no) FROM  employees.emplo_dup2;
+# DROP TABLE IF  EXISTS emplo_dup3;
+
+CREATE TABLE IF NOT EXISTS emplo_dup3 LIKE  employees.employees;
+
+INSERT INTO emplo_dup3 
+SELECT *
+FROM 
+employees.employees
+WHERE emp_no < 10050;
+
+SELECT  COUNT(emp_no) 
+FROM  test_create_db.emplo_dup3;
+
+
+
+SELECT * 
+FROM emplo_dup3;
 
 /*
 START TRANSACTION;
-TRUNCATE TABLE emplo_dup2;
+
+TRUNCATE TABLE emplo_dup3; # Видалення всіх значень(не підтримує транзакції)
 
 ROLLBACK;
 */
-DESC tasks;
 
-INSERT INTO tasks(id, status,  priority, title ,start_date, due_date, hardware_group)
-VALUES  (1, 0, 0, 'Learn NOT NULL constraint', '2017-02-01','2017-02-02', 10),
-				(2,  1, 1, 'Check and update NOT NULL constraint to your database', '2017-02-01',NULL, 11);
 
-DESC tasks;
+DESC tasks_change_struct;
 
-INSERT INTO tasks(id ,task_id, title, status, priority, hardware_group, id_last)
-VALUES  (1, 0,  'Learn NOT NULL constraint', 1, 10, 5, 8),
-				(2,  2,  'Check and update NOT NULL constraint to your database', 2, 11, 7,1);
+INSERT INTO tasks_change_struct(id, status,  priority, title ,start_date, due_date, hardware_group, id_last)
+VALUES  (1, 0, 0, 'Learn NOT NULL constraint', '2017-02-01','2017-02-02', 10, 15),
+				(2,  1, 1, 'Check and update NOT NULL constraint to your database', '2017-02-01',NULL, 11, 15);
+
+DESC tasks_change_struct;
+
+INSERT INTO tasks_change_struct(id ,task_id, title, status, priority, hardware_group, id_last)
+VALUES  (3, 0,  'Learn NOT NULL constraint', 1, 10, 5, 8),
+				(3,  2,  'Check and update NOT NULL constraint to your database', 2, 11, 7,1);
                 
-SELECT * FROM tasks;
+                
+SELECT * FROM 
+tasks_change_struct;
 
-UPDATE tasks
-SET
-	due_date =  NOW()  + 7
-WHERE
-	due_date IS NULL;
+# Оновлення данних в яких NULL 
+UPDATE tasks_change_struct # Вказати оновлення таблиц
+SET # Ключове слово після якого вказуемо зміни
+	due_date =  CURDATE()  + 1 	# Змінюємо значення в таблиці які відповідають умові 
+WHERE 
+	due_date IS NOT NULL; # Задаємо умову по якій буде йти зміна 
+   
+   
+TRUNCATE TABLE tasks_change_struct;
 
-INSERT INTO tasks(id ,task_id, title, status, priority, hardware_group, id_last, start_date)
-VALUES  (4, 5,  'Learn NOT NULL constraint', 1, 10, 5, 8, '1998-05-05'),
-				(3,  4,  'Check and update NOT NULL constraint to your database', 2, 11, 7,1, '2001-08-01');
-
-SELECT * FROM  tasks;
-
-UPDATE tasks
-SET
-	due_date =  start_date  + 7
-WHERE
-	due_date IS NULL;
-
-SELECT * FROM  tasks;
-
-ALTER TABLE tasks
+ALTER TABLE tasks_change_struct
 CHANGE COLUMN
 	due_date
 	end_date DATE NOT NULL;
 
-ALTER TABLE tasks
+
+INSERT INTO tasks_change_struct(id ,task_id, title, status, priority, hardware_group, id_last, start_date, end_date)
+VALUES  (5, 6,  'Learn NOT NULL constraint', 1, 10, 5, 8, '1998-05-05', now()),
+				(6,  7,  'Check and update NOT NULL constraint to your database', 2, 11, 7,1, '2001-08-01', now());
+
+SELECT * FROM
+tasks_change_struct;
+
+UPDATE tasks_change_struct
+SET
+	end_date =  start_date  + 7
+WHERE
+	end_date IS  NOT NULL;
+
+SELECT *
+FROM  tasks_change_struct;
+
+
+
+ALTER TABLE tasks_change_struct
 MODIFY COLUMN
 	end_date 
     DATE  NOT NULL;
     
     
-DESCRIBE tasks;
+DESCRIBE tasks_change_struct;
 
 
 CREATE TABLE users (
@@ -293,7 +519,7 @@ CREATE TABLE users (
 	password 				VARCHAR(255),
 	email 						VARCHAR(255) 
     );
-    
+
     
 CREATE TABLE roles(
 	role_id INT AUTO_INCREMENT,
@@ -314,11 +540,19 @@ CREATE TABLE pk_demos(
 	title VARCHAR(255) NOT NULL
 );
 
+DESC pk_demos;
+
 ALTER TABLE pk_demos
 ADD PRIMARY KEY(id);
 
+ALTER TABLE pk_demos
+DROP PRIMARY KEY;
 
-CREATE DATABASE fk_demo;
+# DROP DATABASE IF EXISTS fk_demo;
+CREATE DATABASE IF NOT EXISTS fk_demo;
+
+SHOW DATABASES;
+
 USE fk_demo;
 
 # Restrict  
@@ -339,37 +573,48 @@ DESC categories;
 DESC products;
 
 INSERT INTO categories(categoryName)
-VALUES('Smartphone'), ('Smartwatch');
+VALUES ('Smartphone'), ('Smartwatch');
 
-SELECT * FROM categories;
+SELECT * FROM
+categories;
 
-INSERT INTO products(productName, categoryId) VALUES('iPhone',1);
+INSERT INTO products(productName, categoryId) 
+VALUES('iPhone',1);
 
-SELECT * FROM products;
+SELECT * FROM 
+products;
 
 INSERT INTO products(productName, categoryId) VALUES('iPad',3);
 
-# Error Code: 1452. Cannot add or update a child row: a foreign key constraint fails (`fk_demo`.`products`, CONSTRAINT `fk_category` FOREIGN KEY (`categoryId`) REFERENCES `categories` (`categoryId`))
+# Error Code: 1452. Cannot add or update a child row: a foreign key constraint fails (`fk_demo`.`products`, CONSTRAINT `fk_category` 
+# FOREIGN KEY (`categoryId`) REFERENCES `categories` (`categoryId`))
 
-INSERT INTO products(productName, categoryId) VALUES('iPad',2);
+INSERT INTO 
+products(productName, categoryId) VALUES('iPad',2);
 
-SELECT * FROM products;
+SELECT * FROM 
+products;
 
 UPDATE categories
 SET categoryId = 100
 WHERE categoryId = 1;
 
+SELECT * FROM categories;
 
-DROP TABLE products;
+
+# CASCADE 
+
+DROP TABLE products; 
 
 CREATE TABLE products (
     productId INT AUTO_INCREMENT PRIMARY KEY,
     productName VARCHAR(100) NOT NULL,
     categoryId INT NOT NULL,
-    CONSTRAINT fk_category FOREIGN KEY (categoryId)
-        REFERENCES categories (categoryId)
-        ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT fk_category FOREIGN KEY (categoryId) # Створюємо контстрейнт з назвою для FK 
+        REFERENCES categories (categoryId) # Вказуємо звязок 
+        ON UPDATE CASCADE    ON DELETE CASCADE #  Вказуємо новий тип обновлення 
 )  ENGINE=INNODB;
+
 
 INSERT INTO products(productName, categoryId)
 VALUES
@@ -378,27 +623,34 @@ VALUES
 	('Apple Watch',2),
 	('Samsung Galaxy Watch',2);
 
-
+SELECT *
+ FROM products;
 
 UPDATE categories
 SET categoryId = 100
 WHERE categoryId = 1;
 
-SELECT * FROM categories;
-SELECT * FROM products;
+SELECT * FROM 
+categories;
+
+SELECT * FROM 
+products;
 
 
 DELETE FROM categories
 WHERE categoryId = 2;
 
-SELECT * FROM categories;
+SELECT * FROM
+ categories;
 
-SELECT * FROM products;
+SELECT * FROM 
+ products;
 
 
 # Slide 25
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS products;
+
 
 CREATE TABLE categories (
     categoryId INT AUTO_INCREMENT PRIMARY KEY,
@@ -411,7 +663,7 @@ CREATE TABLE products (
     categoryId INT,
     CONSTRAINT fk_category FOREIGN KEY (categoryId)
         REFERENCES categories (categoryId)
-        ON UPDATE SET NULL ON DELETE SET NULL
+        ON UPDATE SET NULL ON DELETE SET NULL # Вказуємо оновлення та видалення Set null
 )  ENGINE=INNODB;
 
 
@@ -421,6 +673,9 @@ VALUES
 ('Smartphone'),
 ('Smartwatch');
 
+SELECT *
+FROM categories;
+
 INSERT INTO products(productName, categoryId)
 VALUES
 ('iPhone', 1),
@@ -428,24 +683,32 @@ VALUES
 ('Apple Watch',2),
 ('Samsung Galary Watch',2);
 
+SELECT * 
+FROM products;
+
 UPDATE categories 
 SET 
     categoryId = 100
 WHERE
     categoryId = 1;
 
-SELECT * FROM products;
+SELECT * 
+FROM categories;
+
+SELECT * 
+FROM products;
     
-SELECT * FROM categories;
+
 
 DELETE FROM categories
 WHERE categoryId = 2;
 
 SELECT * FROM products;
 
-SET foreign_key_checks = 0;
+SET foreign_key_checks = 0; # Відлючити констрейети
 
-SET foreign_key_checks = 1;
+
+SET foreign_key_checks = 1; # Включити 
 
 
 
@@ -458,7 +721,7 @@ CREATE TABLE parts (
 
 
 INSERT INTO parts(part_no, description,cost,price)
-VALUES('A-001','Cooler',0, 100);
+VALUES('A-001','Cooler', -2, 100);
 
 DROP TABLE parts;
 
@@ -470,7 +733,26 @@ CREATE TABLE parts (
     CONSTRAINT parts_chk_price_gt_cost CHECK (price >= cost)
 );
 
-INSERT INTO parts(part_no, description,cost,price)
+INSERT INTO parts(part_no, description,cost,price) 
 VALUES('A-001','Cooler',200,100);
 
+SELECT * FROM parts;
 
+DESC parts;
+
+/*
+	Видалити parts_chk_price_gt_cost  з parts
+*/
+
+ALTER TABLE parts
+DROP CONSTRAINT parts_chk_price_gt_cost;
+
+/*
+	Добавити колонку після part_no 
+    test_add INT NOT NULL 
+*/
+ALTER TABLE parts
+ADD COLUMN test_add INT NOT NULL AFTER part_no;
+
+SELECT *
+FROM parts;
