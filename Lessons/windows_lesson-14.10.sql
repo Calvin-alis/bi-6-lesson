@@ -4,6 +4,8 @@
 		1. https://tproger.ru/translations/sql-window-functions/
         2. https://oracleplsql.ru/cume_dist-function.html - Синтаксис № 2 функции CUME_DIST - используется как аналитическая функция
         3. https://www.youtube.com/watch?v=UiAwYUEGxIc 
+        4. https://www.youtube.com/watch?v=yeIoV832zKw
+        5. https://habr.com/ru/company/otus/blog/490296/ 
 */
 /*
 	SELECT   
@@ -68,6 +70,8 @@ SELECT AVG(sale)
 sales;
  
  /*
+ 
+    
 	SELECT   
     название_функции(Столбец для вычисление) 
 	OVER (ключевое слово для начала windows function)
@@ -328,7 +332,6 @@ LIMIT 1));
 	Task 1.Отобразить сотрудников и напротив каждого, показать информацию о разнице текущей и первой зарплате.
 */
 
-
 # Крок 1. Знайти найпершу ЗП по працівнику 
 SELECT emp_no, salary,
 FIRST_VALUE(salary) 
@@ -367,100 +370,152 @@ SELECT *
 	UNBOUNDED FOLLOWING emp_no = 499999
 */
 /*
-
 	UNBOUNDED PRECEDING emp_no = 10001
-    1 PRECEDING emp_no = 10001 # Min вгору
-    CURRENT_ROW 	emp_no = 10002
-    1 FOLLOWING emp_no = 10004  # Max вниз
+    3 PRECEDING emp_no = 10002 # Min вгору число строк до строкі 
+    CURRENT_ROW 	emp_no = 10005
+    2 FOLLOWING emp_no = 10007  # Max вниз число строк після строки
 	UNBOUNDED FOLLOWING emp_no = 499999
 */
-# Вивезти кумулятивний  сумму по ЗП
-SELECT emp_no, salary,
-		SUM(salary) OVER (
-			PARTITION BY emp_no 	
-            ROWS unbounded preceding
-        ) 'Sum'
-FROM employees.salaries;
+
+
+/*
+	Last Value - повертає останній об'єкт у вікні. Потрібно вказувати межі вікна.
+*/
+
+/*
+	SELECT 
+    назва_віконної функції(колонка якщо потрібна для обислення)
+    OVER - ключове слово для створення вікна
+    (
+    partition by - колонка для розбивки(аналог group by)
+    order by - колонка для сортування
+    ROWS -  строкі  
+    RANGE - діапозон строк(числові або дата type )
+		для обмеження строк в межах группи
+        * Потрібен Order by 
+    )
+    
+*/
+SELECT es.emp_no, ee.first_name, ee.last_name, es.salary,
+	SUM(salary)
+    OVER (
+		PARTITION BY es.emp_no
+        ORDER BY ee.hire_date
+		ROWS UNBOUNDED  PRECEDING # Вказуємо діапазон від початку до кінця поточної строки 
+    )
+FROM employees.salaries AS es
+INNER JOIN employees.employees AS ee USING(emp_no);
+
+
+SELECT es.emp_no, ee.first_name, ee.last_name, es.salary,
+	SUM(salary)
+    OVER (
+		PARTITION BY es.emp_no
+        ORDER BY ee.hire_date
+												-- Нижня рамка 									Верхня рамка 
+		ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW # Вказуємо діапазон від початку до кінця поточної строки 
+    ),
+    SUM(salary)
+    OVER (
+		PARTITION BY es.emp_no
+        ORDER BY ee.hire_date
+											-- Нижня рамка 									Верхня рамка 
+		ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING # Вказуємо діапазон від початку до кінця поточної строки 
+    )
+FROM employees.salaries AS es
+INNER JOIN employees.employees AS ee USING(emp_no);
+
+        
 
 SELECT employee_name, hours,
 LAST_VALUE(employee_name) OVER ( 
 			ORDER BY hours
-			RANGE BETWEEN
-											UNBOUNDED PRECEDING AND
-											UNBOUNDED FOLLOWING
+			RANGE BETWEEN # Діапозон мінімального і максимального значення 
+											UNBOUNDED PRECEDING  # Нижній значення (min)
+                                            AND 
+											UNBOUNDED FOLLOWING # Верхнеє значення (max)
 )  highest_overtime_employee
-FROM overtime;
+FROM employees.overtime;
 
+# Без вказання range
 SELECT employee_name, hours,
 LAST_VALUE(employee_name) OVER ( 
-			ORDER BY hours
+			ORDER BY hours # Завжди вказуємо діапозон, працює тільки в рамках свого рядка
 )  highest_overtime_employee
 FROM overtime;
 
 
 SELECT employee_name, department, hours,
-	LAST_VALUE(employee_name) OVER (
+	LAST_VALUE(employee_name) 
+    OVER (
 							PARTITION BY department
-							ORDER BY hours
-							RANGE BETWEEN
-							UNBOUNDED PRECEDING AND
-							UNBOUNDED FOLLOWING
+							ORDER BY hours  ASC
+							 RANGE  BETWEEN
+							 UNBOUNDED PRECEDING AND
+							 UNBOUNDED FOLLOWING
 ) most_overtime_employee
 FROM overtime;
 
 SHOW TABLES;
 
 
-# Lead - Lag
 /*
-	Lead - повертає наступний рядок у вікні
-    Lag - повертає попередній рядок у вікні
+	Функції зміщення: 
+		Lead - повертає наступний рядок у вікні
+		Lag - повертає попередній рядок у вікні
+        *Потрібно сортування 
 */
 SELECT emp_no, from_date,
-				LEAD(from_date,1) -- Дозволяє обрати n - кількість рядків, lead(колонка, кількість рядків які обираємо)
-                OVER (
+				LEAD( -- Створення віконної функції 
+                from_date, -- Вказати стовбчиу
+                1, -1)  -- Кількість значеннь
+                OVER ( 
 				PARTITION BY emp_no
 				ORDER BY from_date ) nextSalaryDate
-FROM salaries;
+FROM employees.salaries;
 
 USE employees;
 
-SELECT * FROM salaries 
+SELECT * FROM employees.salaries 
 WHERE emp_no = 10002;
 
 SELECT emp_no, from_date,
-			LEAD(from_date,1) 	OVER ( 	# LEAD Повертає наступне значення
+			LEAD(from_date,1) 	OVER ( 	# LEAD Повертає наступне значення, якщо значення не буде, то поверне Null
 									PARTITION BY emp_no
 									ORDER BY from_date ) AS nextSalaryDate,
-			LAG(from_date, 1) OVER ( 		# LAG Повертає попереднє значення
+			LAG(from_date, 1) OVER ( 		# LAG Повертає попереднє значення,  якщо значення не буде, то поверне Null
 									PARTITION BY emp_no
 									ORDER BY from_date )  AS previosSalaryDate
-FROM salaries
+FROM employees.salaries
 WHERE emp_no < 10050 AND emp_no <> 10001;
 
 
 
 # Slide 26 
-CREATE TABLE depts_salaries SELECT dept_name,
+CREATE TABLE depts_salaries 
+	SELECT dept_name,
     YEAR(salaries.from_date) AS salaryYear,
     COUNT(emp_no)  AS emp_salaries 
-    FROM departments
-        INNER JOIN dept_emp USING (dept_no)
-        INNER JOIN salaries USING (emp_no)
+    FROM employees.departments
+	INNER JOIN employees.dept_emp USING (dept_no)
+	INNER JOIN employees.salaries USING (emp_no)
 GROUP BY dept_name , YEAR(salaries.from_date);
 
-SELECT * FROM depts_salaries;
+SELECT * FROM 
+employees.depts_salaries;
 
 WITH t AS (
 		SELECT dept_name, SUM(emp_salaries) emp_salaries_sum
-		FROM depts_salaries
+		FROM employees.depts_salaries
 		GROUP BY dept_name
 )
 
+
 SELECT dept_name, emp_salaries_sum,
 					ROUND(
-					PERCENT_RANK() OVER (
-					ORDER BY emp_salaries_sum
+					PERCENT_RANK()  # Створення віконної функції 
+                    OVER (
+					ORDER BY emp_salaries_sum ASC
 					) ,2)  AS percentile_rank
 FROM t;
 
@@ -471,3 +526,11 @@ FROM t;
         (3 - 1) / (9 - 1) = 2 / 8 = 0.25
         (4 - 1) / (9 - 1) = 3 / 8 = 0.375 etc.
 */
+
+# Вивезти кумулятивний  сумму по ЗП
+SELECT emp_no, salary,
+		SUM(salary) OVER (
+			PARTITION BY emp_no 	
+            ROWS unbounded preceding
+        ) 'Sum'
+FROM employees.salaries;
