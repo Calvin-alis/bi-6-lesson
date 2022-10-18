@@ -16,6 +16,9 @@
                 6. https://mode.com/sql-tutorial/introduction-to-sql/
                 7. https://youtu.be/HXV3zeQKqGY - Курс на англійскій 
                 8. https://www.youtube.com/watch?v=aHGci95Ec7c&list=PLf30vI0hEi1v435cBmZSHkr1QAJdOk9mb - На російській мові 
+                9. https://www.coursera.org - шукаємо sql/mysql
+                10. https://www.youtube.com/playlist?list=PLf30vI0hEi1v435cBmZSHkr1QAJdOk9mb
+                
         
         
         
